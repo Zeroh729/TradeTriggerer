@@ -15,5 +15,10 @@
   "bugs": {
     "url": "https://github.com/Zeroh729/TradeTriggerer/issues"
   },
-  "homepage": "https://github.com/Zeroh729/TradeTriggerer#readme"
+  "homepage": "https://github.com/Zeroh729/TradeTriggerer#readme",
+  "dependencies": {
+    "googleapis": "^27.0.0",
+    "jssoup": "0.0.8",
+    "request": "2.87.0"
+  }
 }

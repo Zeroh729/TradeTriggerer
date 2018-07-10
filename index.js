@@ -3,16 +3,25 @@ const readline = require('readline');
 const {google} = require('googleapis');
 var JSSoup = require('jssoup').default;
 var request = require('request');
+var map = require('./mapIds');
+var utils = require('./utils')
 
 // If modifying these scopes, delete credentials.json.
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive'];
 const TOKEN_PATH = 'credentials.json';
 
-// Load client secrets from a local file.
+function requestTicker(ticker, callback){
+  request('http://pseapi.com/api/Stock/'+ticker, function(err, res){
+    if (err) { console.log('Error connecting to pseapi :', err); return; }
+    json = JSON.parse(res.body)
+    callback(map.id[ticker], json[json.length-1]);
+  });
+}
+
 fs.readFile('client_secret.json', (err, content) => {
   if (err) return console.log('Error loading client secret file:', err);
   // Authorize a client with credentials, then call the Google Sheets API.
-  authorize(JSON.parse(content), appendDada);
+  authorize(JSON.parse(content), main);
 });
 
 /**
@@ -65,46 +74,32 @@ function getNewToken(oAuth2Client, callback) {
   });
 }
 
-/**
- * Prints the names and majors of students in a sample spreadsheet:
- * @see https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
- * @param {google.auth.OAuth2} auth The authenticated Google OAuth client.
- */
-function listMajors(auth) {
-  const sheets = google.sheets({version: 'v4', auth});
-  sheets.spreadsheets.values.get({
-    spreadsheetId: '1WuTS-bjEokI9ztfrmpq2i2j3VccNsdeX7fbYqg81NXY',
-    range: 'Sheet1!A:B',
-  }, (err, res) => {
-    if (err) return console.log('The API returned an error: ' + err);
-    const rows = res.data.values;
-    if (rows.length) {
-      console.log('Name, Major:');
-      // Print columns A and E, which correspond to indices 0 and 4.
-      rows.map((row) => {
-        console.log(`${row[0]}, ${row[1]}`);
-      });
-    } else {
-      console.log('No data found.');
-    }
-  });
+
+function main(auth) {
+  arr = ["JFC", "MEG"]
+  for(i in arr){
+    console.log(map.id[arr[i]])
+    requestTicker(arr[i], function callback(ssid, val) {
+      appendDada(auth, ssid, utils.format_mmddyyyy(val.date), val.open, val.high, val.low, val.close)
+    })
+  }
 }
 
-function appendDada(auth) {
+function appendDada(auth, spreadsheetId, date, open, high, low, close) {
   const sheets = google.sheets({version: 'v4', auth});
   sheets.spreadsheets.values.append({
-    spreadsheetId: '1WuTS-bjEokI9ztfrmpq2i2j3VccNsdeX7fbYqg81NXY',
-    range: 'Sheet1!A1:B',
+    spreadsheetId: spreadsheetId,
+    range: 'Sheet1!A2:E',
     valueInputOption: 'USER_ENTERED',
     insertDataOption: 'INSERT_ROWS', 
     includeValuesInResponse: 'FALSE',
     responseValueRenderOption: 'FORMATTED_VALUE',
     resource: {
       "majorDimension": "ROWS",
-      "range": "Sheet1!A1:B",
+      "range": "Sheet1!A2:E",
       "values": [
         [
-          "Hello!", "World!"
+          date, open, high, low, close
         ]
       ]
     }
